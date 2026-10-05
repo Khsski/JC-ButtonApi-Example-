@@ -1,1 +1,161 @@
-Yes I used ChatGPT to write this example, I really couldn't careless.
+# Yes I used ChatGPT to write this example, I really couldn't careless.
+
+
+# Button API Usage Example
+
+This guide shows how to use Jolly Client's Button API. It covers the button constructors and Quick Menu setup without including the Button API implementation source.
+
+## Namespaces
+
+Add these to files that create controls:
+
+```csharp
+using Melon_Jolly_Client.ButtonApi;
+using Melon_Jolly_Client.ButtonApi.QM;
+using Melon_Jolly_Client.ButtonApi.QM.Buttons;
+```
+
+## Create a submenu
+
+Create a child `Tab` for the submenu, then add a `VRCSubmenu` button to its parent tab. Put the submenu's controls on the child tab.
+
+```csharp
+var exploitsTab = PageSystem.CreateSubmenuTab(toolsTab, "Exploits");
+
+new VRCSubmenu(
+    toolsTab,       // Where the submenu button appears
+    "Exploits",     // Button label
+    "Exploits.png", // Icon filename in Jolly Client/Icons
+    exploitsTab);   // Tab shown after clicking the button
+```
+
+Example submenu class:
+
+```csharp
+using Melon_Jolly_Client.ButtonApi.QM;
+using Melon_Jolly_Client.ButtonApi.QM.Buttons;
+
+namespace Melon_Jolly_Client.Jolly_Client.Submenus
+{
+    internal static class Exploits
+    {
+        internal static void Build(Tab toolsTab, Tab exploitsTab)
+        {
+            new VRCSubmenu(
+                toolsTab,
+                "Exploits",
+                "Exploits.png",
+                exploitsTab);
+
+            new VRCToggle(
+                exploitsTab,
+                "Example toggle",
+                false,
+                enabled => { });
+
+            new VRCButton(
+                exploitsTab,
+                "Example button",
+                "Example.png",
+                () => { });
+        }
+    }
+}
+```
+
+## Add a regular button
+
+`VRCButton` takes the tab to place it on, its label, an icon filename, and an action to run when clicked.
+
+```csharp
+new VRCButton(
+    toolsTab,
+    "Hide Client",
+    "JollyClient.png",
+    () =>
+    {
+        // Put the button action here.
+    });
+```
+
+Use `() => { }` as a placeholder while the button has no behavior yet.
+
+## Add a toggle
+
+`VRCToggle` takes the tab, label, initial on/off value, and an `Action<bool>` callback. The callback receives `true` when enabled and `false` when disabled. Toggle icons use the API's default On/Off icons.
+
+```csharp
+new VRCToggle(
+    ExploitsTab,
+    "E1 !!!! UDDDD",
+    false,
+    enabled => { });
+```
+
+Example with separate on and off actions:
+
+```csharp
+new VRCToggle(
+    ExploitsTab,
+    "Example toggle",
+    false,
+    enabled =>
+    {
+        if (enabled)
+        {
+            // Toggle turned on.
+        }
+        else
+        {
+            // Toggle turned off.
+        }
+    });
+```
+
+## Set up tabs and controls in `waitforqm.cs`
+
+Wait for the Quick Menu, enable DevTools, initialize icon downloads, then create the root tab and child tabs. Build each submenu after creating its tab.
+
+```csharp
+public static IEnumerator Wait()
+{
+    while (GameObject.Find("Canvas_QuickMenu(Clone)") == null)
+        yield return null;
+
+    yield return null;
+
+    Tab.EnableDevTools();
+    Build();
+
+    yield return Icon_Helper.Initialize();
+
+    var toolsTab = Tab.DevTools();
+
+    var selfModsTab = PageSystem.CreateSubmenuTab(toolsTab, "Self Mods");
+    SelfMods.Build(toolsTab, selfModsTab);
+
+    var visualsTab = PageSystem.CreateSubmenuTab(toolsTab, "Visuals");
+    Visuals.Build(toolsTab, visualsTab);
+
+    var exploitsTab = PageSystem.CreateSubmenuTab(toolsTab, "Exploits");
+    Exploits.Build(toolsTab, exploitsTab);
+
+    // Add other submenu tabs the same way.
+
+    HideClient.Build(toolsTab);
+}
+```
+
+Replace `SelfMods`, `Visuals`, `Exploits`, and `HideClient` with your submenu class names. A regular button such as Hide Client goes directly on `toolsTab`; it does not need a child tab.
+
+## Methods used
+
+- `Tab.EnableDevTools()` enables the DevTools page in the Quick Menu.
+- `Tab.DevTools()` gets the root tab for the main menu controls.
+- `PageSystem.CreateSubmenuTab(parent, title)` creates a child tab and stores the title shown while it is open.
+- `new VRCSubmenu(parentTab, text, iconFile, destinationTab)` adds a submenu button that opens its destination tab.
+- `new VRCButton(tab, text, iconFile, onClick)` adds a regular clickable button.
+- `new VRCToggle(tab, text, initialValue, onChanged)` adds a toggle and calls the callback when its state changes.
+- `Icon_Helper.Initialize()` downloads/loads the configured icons; yield it before building controls that use custom icons.
+
+Custom icon files must be available through the configured icon repository and use the exact filename, including capitalization, such as `SelfMods.png` or `JollyClient.png`.
